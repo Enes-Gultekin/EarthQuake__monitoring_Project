@@ -58,8 +58,8 @@ fetch("service.php")
       const geometry = [row.latitude, row.longitude];
       var each_country = L.icon({
         iconUrl: "data/earthquake.png",
-        iconSize: [64, 64],
-        iconAnchor: [32, 64],
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
         className: "icons",
       });
       const markers = L.marker(geometry, {
