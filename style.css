@@ -16,6 +16,8 @@ body {
   width: max-content;
   height: max-content;
 }
+
+/* leaflet content attributes */
 .leaflet-popup-content-wrapper h3 {
   text-decoration: underline;
   text-align: center;
@@ -34,6 +36,7 @@ body {
   border-style: solid;
 }
 
+/* location button attributes */
 #location_button {
   display: flex;
   align-items: center;
@@ -54,6 +57,7 @@ body {
   color: black;
   cursor: pointer;
 }
+
 #collapsed_search {
   display: flex;
   position: absolute;
@@ -63,21 +67,7 @@ body {
   height: 50px;
   z-index: 500;
 }
-#submit_button {
-  align-items: flex-end;
-  width: 70px;
-  height: 15px;
-  margin-top: 3px;
-  font-size: small;
-
-  text-align: center;
-  border-radius: 6px;
-  background: rgb(224, 213, 213);
-}
-
-#search_input {
-  border-radius: 6px;
-}
+/* collapsed button of table */
 #table_collapse {
   display: flex;
   position: absolute;
@@ -85,5 +75,32 @@ body {
   left: 20px;
   width: 50px;
   height: 50px;
+  z-index: 500;
+}
+
+/* Attributes of table */
+#collapseTable {
+  width: 300px;
+  height: auto;
+  overflow: scroll;
+}
+
+#collapseTable th {
+  position: sticky;
+  top: 0;
+}
+#recent_eq {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  bottom: 100px;
+  right: 10px;
+  width: 50px;
+  height: 500px;
+
+  border-width: 1px 1px 1px 1px;
+  opacity: 0.6;
+  text-align: center;
+  font-size: smaller;
   z-index: 500;
 }

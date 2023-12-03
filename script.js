@@ -1,5 +1,9 @@
+const table_content = document.getElementById("table_container");
 const main_container = document.getElementById("main_container");
 const rowss = document.getElementById("create_rows");
+const search_button = document.getElementById("search_button");
+const search_input = document.getElementById("search_input");
+
 const map = L.map("map", {
   maxZoom: 20,
   minZoom: 3.2,
@@ -68,7 +72,19 @@ fetch("service.php")
 
       const damage = parseInt(row.total_damage) * 1000;
 
-      damage2 = damage.toLocaleString();
+      //create table rows
+      const table_body = document.createElement("tr");
+      table_body.innerHTML = `    
+        
+          <td scope="row">${row.country}</th>          
+          <td>${row.magnitude}</td>
+          <td>${row.date}</td>
+       
+              
+      `;
+
+      damage_fixed = damage.toLocaleString();
+
       markers.bindPopup(
         "<h3 style='text-transform: capitalize'>" +
           row.country +
@@ -87,10 +103,43 @@ fetch("service.php")
           "</span>" +
           "<br><b>Total Damage in Dollars: $</b>" +
           "<span style='float:right'>" +
-          damage2 +
+          damage_fixed +
           "</span>"
       );
+
       layerGroup.addLayer(markers);
+      function updateTable() {
+        if (map.hasLayer(layerGroup)) {
+          // Create or update the table
+          createTable();
+        } else {
+          // Remove the table
+          removeTable();
+        }
+      }
+
+      function createTable() {
+        table_content.appendChild(table_body);
+      }
+      function removeTable() {
+        table_content.remove();
+      }
+      // Event listener for layer control changes
+      map.on("overlayadd overlayremove", updateTable);
+
+      map.on("overlayadd", function (event) {
+        if (event.name === "Significant Earth-Quakes") {
+          // 'Markers' layer is checked, create the table
+          createTable();
+        }
+      });
+
+      map.on("overlayremove", function (event) {
+        if (event.name === "Significant Earth-Quakes") {
+          // 'Markers' layer is unchecked, remove the table
+          removeTable();
+        }
+      });
     }
   });
 
@@ -118,6 +167,7 @@ fetch(api_url)
       const id = item.id;
       const list = document.createElement("tr");
       const place = item.properties.place;
+
       var popup_content =
         "<h3>Attributes</h3>" +
         "<br><b>Place: </b>" +
@@ -265,6 +315,7 @@ function locf(e) {
     iconAnchor: [32, 64],
     className: "icons",
   });
+  map.flyTo([e.latitude, e.longitude], 10);
   const location_markers = L.marker([e.latitude, e.longitude], {
     icon: location_icon,
   }).addTo(map);
@@ -272,7 +323,29 @@ function locf(e) {
     location_markers.remove();
   });
 }
-var search = document.getElementById("submit_button");
-search.addEventListener("click", () => {
-  fetch("");
+
+//get country coordinates from api
+search_button.addEventListener("click", () => {
+  console.log(search_input.value);
+  fetch("https://restcountries.com/v3.1/all")
+    .then((response) => response.json())
+    .then((items) => {
+      var countryFound = false;
+
+      items.forEach((data) => {
+        var country = data.name.common;
+
+        if (search_input.value === country) {
+          map.flyTo([data.latlng[0], data.latlng[1]], 7);
+          countryFound = true;
+        }
+      });
+
+      if (!countryFound) {
+        alert("There is no such Country: " + search_input.value);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching countries:", error);
+    });
 });
