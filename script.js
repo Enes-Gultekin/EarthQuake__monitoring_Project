@@ -55,6 +55,7 @@ var basemaps = {
 var layerGroup = L.layerGroup();
 L.control.layers(basemaps).addTo(map);
 
+//this code creates rows and markers and it gets attributes
 function createTable(
   checkbox,
   markers_group,
@@ -83,6 +84,8 @@ function createTable(
     }
   });
 }
+
+//fetch most deadliest earthquakes data from data-base(PostGre)
 fetch("service.php")
   .then((request) => {
     return request.json();
@@ -153,31 +156,44 @@ three_days_before = three_days_before.toISOString().split("T")[0];
 
 //fetch geojson from usgs
 const api_url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${three_days_before}&endtime=${current_time}`;
-var layergroup_recenteq = L.layerGroup();
 
+var layergroup_recent_earthquakes = L.layerGroup();
 let country_names;
+
+//the function gets data from usgs api.
 async function recent_eq_function() {
   await fetch(api_url)
     .then((response) => response.json())
     .then((resp) => {
       resp.features.forEach((item) => {
-        const coor = item.geometry.coordinates;
-
+        //change the date to normal format
         var time_stamp = new Date(item.properties.time);
         var date = time_stamp.toISOString().split("T")[0];
         var time = time_stamp.toISOString().split("T")[1];
         time = time.slice(0, -5);
         var date_n_time = date + " " + time;
+
         const mag = item.properties.mag;
         var place = item.properties.place;
 
-        var latitude = coor[1];
-        var longitude = coor[0];
-        findCountry2(latitude, longitude);
+        var latitude = item.geometry.coordinates[1];
+        var longitude = item.geometry.coordinates[0];
+
+        findCountry2(latitude, longitude)
+          .then((country_names) => {
+            if (country_names) {
+              console.log(countryName);
+              // You can use countryName here or in subsequent code
+            } else {
+              console.log("Country not found");
+            }
+          })
+          .catch((error) => console.error("Error:", error));
+
         var popup_content =
           "<h3>Attributes</h3>" +
           "<br><b>Place: </b>" +
-          country_names +
+          place +
           "<br><b>Magnitude: </b><span style='float: right;'>" +
           mag +
           "</span>" +
@@ -213,7 +229,7 @@ async function recent_eq_function() {
           className: "icons",
         });
         if (mag >= 3 && mag < 5) {
-          var green_marker = L.marker([coor[1], coor[0]], {
+          var green_marker = L.marker([latitude, longitude], {
             icon: green_icon,
           });
 
@@ -222,16 +238,18 @@ async function recent_eq_function() {
             fillColor: "green",
             color: "green",
           });
-          var green_circle_marker = L.marker([coor[1], coor[0]], {
+          var green_circle_marker = L.marker([latitude, longitude], {
             icon: pulsingIcon,
           });
 
-          layergroup_recenteq.addLayer(green_circle_marker);
-          layergroup_recenteq.addLayer(green_marker);
+          layergroup_recent_earthquakes.addLayer(green_circle_marker);
+          layergroup_recent_earthquakes.addLayer(green_marker);
 
           green_marker.bindPopup(popup_content);
+
+          //adjust attributes of markers. markers and pulsing circles added
         } else if (mag > 2.5 && mag < 3) {
-          var white_marker = L.marker([coor[1], coor[0]], {
+          var white_marker = L.marker([latitude, longitude], {
             icon: white_icon,
             stroke: true,
 
@@ -242,13 +260,12 @@ async function recent_eq_function() {
             fillColor: "white",
             color: "white",
           });
-          var white_circle_marker = L.marker([coor[1], coor[0]], {
+          var white_circle_marker = L.marker([latitude, longitude], {
             icon: pulsingIcon,
           });
 
-          layergroup_recenteq.addLayer(white_circle_marker);
-          layergroup_recenteq.addLayer(white_marker);
-
+          layergroup_recent_earthquakes.addLayer(white_circle_marker);
+          layergroup_recent_earthquakes.addLayer(white_marker);
           white_marker.bindPopup(popup_content);
         } else if (mag > 5 && mag < 6) {
           var pulsingIcon = L.icon.pulse({
@@ -256,41 +273,45 @@ async function recent_eq_function() {
             fillColor: "orange",
             color: "orange",
           });
-          var orange_circle_marker = L.marker([coor[1], coor[0]], {
+
+          var orange_circle_marker = L.marker([latitude, longitude], {
             icon: pulsingIcon,
           });
-          var orange_marker = L.marker([coor[1], coor[0]], {
+
+          var orange_marker = L.marker([latitude, longitude], {
             icon: orange_icon,
 
             iconSize: [30, 30],
           });
-          layergroup_recenteq.addLayer(orange_marker);
-          layergroup_recenteq.addLayer(orange_circle_marker);
+
+          layergroup_recent_earthquakes.addLayer(orange_marker);
+          layergroup_recent_earthquakes.addLayer(orange_circle_marker);
           orange_marker.bindPopup(popup_content);
         } else if (mag >= 6) {
-          var red_marker = L.marker([coor[1], coor[0]], {
+          var red_marker = L.marker([latitude, longitude], {
             icon: red_icon,
 
             iconSize: [30, 30],
           });
+
           var pulsingIcon = L.icon.pulse({
             iconSize: [20, 20],
             fillColor: "red",
             color: "red",
           });
-          var red_circle_marker = L.marker([coor[1], coor[0]], {
+
+          var red_circle_marker = L.marker([latitude, longitude], {
             icon: pulsingIcon,
           });
 
-          layergroup_recenteq.addLayer(red_circle_marker);
-          layergroup_recenteq.addLayer(red_marker);
-
+          layergroup_recent_earthquakes.addLayer(red_circle_marker);
+          layergroup_recent_earthquakes.addLayer(red_marker);
           red_marker.bindPopup(popup_content);
         }
 
         createTable(
           recent_eq,
-          layergroup_recenteq,
+          layergroup_recent_earthquakes,
           place,
           mag,
           date_n_time,
@@ -300,6 +321,7 @@ async function recent_eq_function() {
       });
     });
 
+  //creates fault-line vector layer.
   var fault_lines;
   fetch("data/fault_line.geojson")
     .then((request) => {
@@ -318,12 +340,14 @@ async function recent_eq_function() {
     }
   });
 }
+
+//gets current location and zoom to the coordinate
 var location_button = document.getElementById("location_button");
 location_button.addEventListener("click", () => {
   console.log("button clicked");
   map.locate().on("locationfound", locf);
 });
-
+// create a location button and marker on the map
 function locf(e) {
   console.log(e.latLng);
   var location_icon = L.icon({
@@ -341,7 +365,7 @@ function locf(e) {
   });
 }
 
-//get country coordinates from api
+//assign attributes to search button and get country coordinates from api. when gets value, zoom to the related country
 search_button.addEventListener("click", () => {
   console.log(search_input.value);
   var search_text =
@@ -366,55 +390,40 @@ search_button.addEventListener("click", () => {
     });
 });
 
-//finds country from coordinates
-// function findCountry(lat, lng) {
+//find country from coordinates. it is used to find the related country
+//when the recent earthquake events are shown, countries will be displayed rather than city or address
+let c_code = new Array();
+let country = new Array();
+// async function findCountry2(lat, lng) {
 //   var api =
 //     "https://api.maptiler.com/geocoding/" +
 //     lng +
 //     "," +
 //     lat +
 //     ".json?key=KscIZaAYpw2DmDqX5O2V";
-//   fetch(api)
+
+//   await fetch(api)
 //     .then((request) => {
 //       return request.json();
 //     })
 //     .then((data) => {
-//       var country_name = data.features[2].place_name_en;
-//       return country_name;
+//       var country_code = data.features[0].properties.country_code;
+//       //console.log(country_code);
+
+//       //all country codes will be lowered
+//       //so that we can match these codes with
+//       //following data in order to find country
+
+//       for (var i = 0; i < country.length; i++)
+//         if (country_code === country[i][0].toLowerCase()) {
+//           country_names = country[i][1];
+//           //console.log(country_names);
+
+//           //console.log(country_names);
+//         }
+//       return country_names;
 //     });
 // }
-// const a = findCountry(12.798283238756156, 31.595015079102467);
-// console.log(a);
-let c_code = new Array();
-let country = new Array();
-async function findCountry2(lat, lng) {
-  var api =
-    "https://api.maptiler.com/geocoding/" +
-    lng +
-    "," +
-    lat +
-    ".json?key=KscIZaAYpw2DmDqX5O2V";
-
-  await fetch(api)
-    .then((request) => {
-      return request.json();
-    })
-    .then((data) => {
-      var country_code = data.features[0].properties.country_code;
-      console.log(country_code);
-      console.log(country[2][0].toLowerCase());
-      console.log(country.length);
-
-      for (var i = 0; i < country.length; i++)
-        if (country_code === country[i][0].toLowerCase()) {
-          console.log(country[i][1]);
-          country_names = country[i][1];
-        } else {
-          console.log("Unavailable Country input");
-        }
-      return country_names;
-    });
-}
 
 async function getCountryNames() {
   fetch("https://restcountries.com/v3.1/all")
@@ -423,13 +432,38 @@ async function getCountryNames() {
       items.forEach((data) => {
         //console.log(data);
         country.push([data.altSpellings[0], data.name.common]);
-
-        //c_code = c_code.toLowerCase();
       });
     });
 }
-getCountryNames();
+
+async function findCountry2(lat, lng) {
+  var api =
+    "https://api.maptiler.com/geocoding/" +
+    lng +
+    "," +
+    lat +
+    ".json?key=KscIZaAYpw2DmDqX5O2V";
+
+  try {
+    const response = await fetch(api);
+    const data = await response.json();
+
+    var country_code = data.features[0].properties.country_code;
+
+    for (var i = 0; i < country.length; i++) {
+      if (country_code === country[i][0].toLowerCase()) {
+        return country[i][1];
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching country:", error);
+    // You might want to handle errors here
+    return null;
+  }
+}
+
 var lati = 16.30974901422499;
 let long = 32.83875469588597;
 recent_eq_function();
-findCountry2(lati, long);
+getCountryNames();
+//findCountry2(lati, long);
