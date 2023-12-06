@@ -25,7 +25,55 @@
     <div id="mainContainer">
       <div id="mapDiv">
         <div id="map">
-          <!--recent earthquake buttons-->
+          <!--Modal Container-->
+          <div id="message_container" class="modal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Earth-Quake spa application</h5>
+                </div>
+                <div class="modal-body">
+                  <p>
+                    This Single Page Application Project was inpired by recent
+                    Global Warming activities and Natural Disaster Events.
+                  </p>
+                  <br />
+                  <p>
+                    - On the left of the page, there are two buttons other than
+                    zoom buttons which represents attributes of layers.
+                  </p>
+                  <p>
+                    - Search Button is simply used for searching any country.
+                  </p>
+                  <p>
+                    - Table Button displays the table which has place,magnitude
+                    and date informations of every point every earthquake events
+                    .
+                  </p>
+                  <p>
+                    - The Last button has two buttons inside: Significant
+                    EarthQuakes, Recent EarthQuake Events and Fault-Lines.
+                  </p>
+                  <p>
+                    - On the right of the page, there is layer button which has
+                    two map layers and location button that shows current
+                    location.
+                  </p>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                    id="close_message"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div class="modal-footer"></div>
+              </div>
+            </div>
+          </div>
+
+          <!--buttons layout-->
           <div id="layers" class="container mt-3">
             <!-- Collapsible Button -->
             <button
@@ -83,6 +131,7 @@
                     <label
                       class="button_group btn btn-outline-primary"
                       for="significant_input"
+                      title="Show Deadliest Earthquakes"
                       ><svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -98,7 +147,7 @@
                           d="M7.001 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0z"
                         /></svg
                     ></label>
-                    <p>Significant Eq</p>
+                    <p>Significant EarthQuakes</p>
                   </div>
                   <div>
                     <input
@@ -111,6 +160,7 @@
                     <label
                       class="button_group btn btn-outline-primary"
                       for="recent_input"
+                      title="Last 3 days EarthQuake Events"
                       ><svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -139,7 +189,10 @@
                     autocomplete="off"
                     placeholder="xas"
                   />
-                  <label class="btn btn-outline-primary" for="fault_input"
+                  <label
+                    class="btn btn-outline-primary"
+                    for="fault_input"
+                    title="Fault-Lines"
                     ><svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -186,11 +239,11 @@
               data-bs-target="#collapseSearch"
               aria-expanded="false"
               aria-controls="collapseSearch"
-              title="Search Button"
+              title="Search Country"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="25"
+                width="20"
                 height="25"
                 fill="currentColor"
                 class="bi bi-search"
@@ -203,7 +256,11 @@
             </button>
             <div style="min-height: 120px">
               <div class="collapse collapse-horizontal" id="collapseSearch">
-                <div class="card card-body" style="width: 300px">
+                <div
+                  id="search_spaces"
+                  class="card card-body"
+                  style="width: 310px; height: 70px"
+                >
                   <div class="input-group mb-3">
                     <input
                       id="search_input"
@@ -218,6 +275,7 @@
                       class="btn btn-outline-secondary"
                       type="button"
                       id="button-addon2"
+                      style="height: 30px; background-color: rgb(233, 226, 226)"
                     >
                       Search
                     </button>
@@ -231,14 +289,14 @@
           <div id="table_collapse">
             <p>
               <button
-                id="collapse_table"
+                id="collapse_table "
                 class="btn btn-primary"
                 type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#collapseTable"
                 aria-expanded="false"
                 aria-controls="collapseTable"
-                title="Search: Zoom a Country"
+                title="Table of Points"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

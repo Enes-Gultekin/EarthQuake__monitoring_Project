@@ -67,6 +67,9 @@ function createTable(
 ) {
   checkbox.addEventListener("change", () => {
     var table_body = document.createElement("tr");
+    table_body.addEventListener("click", () => {
+      map.flyTo([lat, lng], 8);
+    });
     table_body.innerHTML = `    
         
           <td scope="row">${place}</th>          
@@ -74,8 +77,6 @@ function createTable(
           <td>${date}</td> `;
 
     if (checkbox.checked) {
-      console.log("checkbox clicked:");
-
       markers_group.addTo(map);
       table_content.appendChild(table_body);
     } else {
@@ -150,12 +151,12 @@ fetch("service.php")
 
 let current_time = new Date();
 current_time = current_time.toISOString().split("T")[0];
-let three_days_before = new Date();
-three_days_before.setDate(three_days_before.getDate() - 3);
-three_days_before = three_days_before.toISOString().split("T")[0];
+let one_days_before = new Date();
+one_days_before.setDate(one_days_before.getDate() - 1);
+one_days_before = one_days_before.toISOString().split("T")[0];
 
 //fetch geojson from usgs
-const api_url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${three_days_before}&endtime=${current_time}`;
+const api_url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${one_days_before}&endtime=${current_time}`;
 
 var layergroup_recent_earthquakes = L.layerGroup();
 let country_names;
@@ -178,17 +179,6 @@ async function recent_eq_function() {
 
         var latitude = item.geometry.coordinates[1];
         var longitude = item.geometry.coordinates[0];
-
-        findCountry2(latitude, longitude)
-          .then((country_names) => {
-            if (country_names) {
-              console.log(countryName);
-              // You can use countryName here or in subsequent code
-            } else {
-              console.log("Country not found");
-            }
-          })
-          .catch((error) => console.error("Error:", error));
 
         var popup_content =
           "<h3>Attributes</h3>" +
@@ -349,7 +339,9 @@ location_button.addEventListener("click", () => {
 });
 // create a location button and marker on the map
 function locf(e) {
-  console.log(e.latLng);
+  console.log(
+    "Your Location: Latitude:" + e.latitude + " Longitude:" + e.longitude
+  );
   var location_icon = L.icon({
     iconUrl: "data/current_loc_pin.png",
     iconSize: [64, 64],
@@ -390,80 +382,10 @@ search_button.addEventListener("click", () => {
     });
 });
 
-//find country from coordinates. it is used to find the related country
-//when the recent earthquake events are shown, countries will be displayed rather than city or address
-let c_code = new Array();
-let country = new Array();
-// async function findCountry2(lat, lng) {
-//   var api =
-//     "https://api.maptiler.com/geocoding/" +
-//     lng +
-//     "," +
-//     lat +
-//     ".json?key=KscIZaAYpw2DmDqX5O2V";
-
-//   await fetch(api)
-//     .then((request) => {
-//       return request.json();
-//     })
-//     .then((data) => {
-//       var country_code = data.features[0].properties.country_code;
-//       //console.log(country_code);
-
-//       //all country codes will be lowered
-//       //so that we can match these codes with
-//       //following data in order to find country
-
-//       for (var i = 0; i < country.length; i++)
-//         if (country_code === country[i][0].toLowerCase()) {
-//           country_names = country[i][1];
-//           //console.log(country_names);
-
-//           //console.log(country_names);
-//         }
-//       return country_names;
-//     });
-// }
-
-async function getCountryNames() {
-  fetch("https://restcountries.com/v3.1/all")
-    .then((response) => response.json())
-    .then((items) => {
-      items.forEach((data) => {
-        //console.log(data);
-        country.push([data.altSpellings[0], data.name.common]);
-      });
-    });
-}
-
-async function findCountry2(lat, lng) {
-  var api =
-    "https://api.maptiler.com/geocoding/" +
-    lng +
-    "," +
-    lat +
-    ".json?key=KscIZaAYpw2DmDqX5O2V";
-
-  try {
-    const response = await fetch(api);
-    const data = await response.json();
-
-    var country_code = data.features[0].properties.country_code;
-
-    for (var i = 0; i < country.length; i++) {
-      if (country_code === country[i][0].toLowerCase()) {
-        return country[i][1];
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching country:", error);
-    // You might want to handle errors here
-    return null;
-  }
-}
-
-var lati = 16.30974901422499;
-let long = 32.83875469588597;
 recent_eq_function();
-getCountryNames();
-//findCountry2(lati, long);
+
+const modal = document.getElementById("message_container");
+const close_message = document.getElementById("close_message");
+close_message.addEventListener("click", () => {
+  modal.remove();
+});
