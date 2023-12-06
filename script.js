@@ -3,6 +3,10 @@ const main_container = document.getElementById("main_container");
 const rowss = document.getElementById("create_rows");
 const search_button = document.getElementById("search_button");
 const search_input = document.getElementById("search_input");
+const recent_eq = document.getElementById("recent_input");
+const significant_eq = document.getElementById("significant_input");
+const fault_input = document.getElementById("fault_input");
+let country_name = new Array();
 
 const map = L.map("map", {
   maxZoom: 20,
@@ -49,7 +53,36 @@ var basemaps = {
   Stadia: Stadia_AlidadeSmoothDark,
 };
 var layerGroup = L.layerGroup();
+L.control.layers(basemaps).addTo(map);
 
+function createTable(
+  checkbox,
+  markers_group,
+  place,
+  magnitude,
+  date,
+  lat,
+  lng
+) {
+  checkbox.addEventListener("change", () => {
+    var table_body = document.createElement("tr");
+    table_body.innerHTML = `    
+        
+          <td scope="row">${place}</th>          
+          <td>${magnitude}</td>
+          <td>${date}</td> `;
+
+    if (checkbox.checked) {
+      console.log("checkbox clicked:");
+
+      markers_group.addTo(map);
+      table_content.appendChild(table_body);
+    } else {
+      markers_group.remove();
+      table_content.innerHTML = "";
+    }
+  });
+}
 fetch("service.php")
   .then((request) => {
     return request.json();
@@ -57,9 +90,13 @@ fetch("service.php")
   .then((response) => {
     console.log("Number of significant Earth-Quakes:" + response.length);
     for (var i = 0; i < response.length; i++) {
-      var row = response[i];
-
-      const geometry = [row.latitude, row.longitude];
+      var data = response[i];
+      var place = data.country;
+      var magnitude = data.magnitude;
+      var date = data.date;
+      const geometry = [data.latitude, data.longitude];
+      var latitude = data.latitude;
+      var longitude = data.longitude;
       var each_country = L.icon({
         iconUrl: "data/earthquake.png",
         iconSize: [40, 40],
@@ -70,36 +107,24 @@ fetch("service.php")
         icon: each_country,
       });
 
-      const damage = parseInt(row.total_damage) * 1000;
-
-      //create table rows
-      const table_body = document.createElement("tr");
-      table_body.innerHTML = `    
-        
-          <td scope="row">${row.country}</th>          
-          <td>${row.magnitude}</td>
-          <td>${row.date}</td>
-       
-              
-      `;
-
+      const damage = parseInt(data.total_damage) * 1000;
       damage_fixed = damage.toLocaleString();
 
       markers.bindPopup(
         "<h3 style='text-transform: capitalize'>" +
-          row.country +
+          place +
           "</h3>" +
           "<b>Magnitude: </b>" +
           "<span style='float:right'>" +
-          row.magnitude +
+          magnitude +
           "</span>" +
           "<br><b>Date: </b>" +
           "<span style='float:right'>" +
-          row.date +
+          date +
           "</span>" +
           "<br><b>Total Death Number: </b>" +
           "<span style='float:right'>" +
-          row.total_deaths +
+          data.total_deaths +
           "</span>" +
           "<br><b>Total Damage in Dollars: $</b>" +
           "<span style='float:right'>" +
@@ -108,38 +133,15 @@ fetch("service.php")
       );
 
       layerGroup.addLayer(markers);
-      function updateTable() {
-        if (map.hasLayer(layerGroup)) {
-          // Create or update the table
-          createTable();
-        } else {
-          // Remove the table
-          removeTable();
-        }
-      }
-
-      function createTable() {
-        table_content.appendChild(table_body);
-      }
-      function removeTable() {
-        table_content.remove();
-      }
-      // Event listener for layer control changes
-      map.on("overlayadd overlayremove", updateTable);
-
-      map.on("overlayadd", function (event) {
-        if (event.name === "Significant Earth-Quakes") {
-          // 'Markers' layer is checked, create the table
-          createTable();
-        }
-      });
-
-      map.on("overlayremove", function (event) {
-        if (event.name === "Significant Earth-Quakes") {
-          // 'Markers' layer is unchecked, remove the table
-          removeTable();
-        }
-      });
+      createTable(
+        significant_eq,
+        layerGroup,
+        place,
+        magnitude,
+        date,
+        latitude,
+        longitude
+      );
     }
   });
 
@@ -153,154 +155,169 @@ three_days_before = three_days_before.toISOString().split("T")[0];
 const api_url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${three_days_before}&endtime=${current_time}`;
 var layergroup_recenteq = L.layerGroup();
 
-fetch(api_url)
-  .then((response) => response.json())
-  .then((resp) => {
-    resp.features.forEach((item) => {
-      const coor = item.geometry.coordinates;
+let country_names;
+async function recent_eq_function() {
+  await fetch(api_url)
+    .then((response) => response.json())
+    .then((resp) => {
+      resp.features.forEach((item) => {
+        const coor = item.geometry.coordinates;
 
-      var time_stamp = new Date(item.properties.time);
-      var date = time_stamp.toISOString().split("T")[0];
-      var time = time_stamp.toISOString().split("T")[1];
-      time = time.slice(0, -5);
-      const mag = item.properties.mag;
-      const id = item.id;
-      const list = document.createElement("tr");
-      const place = item.properties.place;
+        var time_stamp = new Date(item.properties.time);
+        var date = time_stamp.toISOString().split("T")[0];
+        var time = time_stamp.toISOString().split("T")[1];
+        time = time.slice(0, -5);
+        var date_n_time = date + " " + time;
+        const mag = item.properties.mag;
+        var place = item.properties.place;
 
-      var popup_content =
-        "<h3>Attributes</h3>" +
-        "<br><b>Place: </b>" +
-        place +
-        "<br><b>Magnitude: </b><span style='float: right;'>" +
-        mag +
-        "</span>" +
-        "<br><b>Date: </b><span style='float: right;'>" +
-        date +
-        "</span>" +
-        "<br><b>Time: </b><span style='float: right;'>" +
-        time +
-        "</span>";
-      //custumize markers
-      var green_icon = L.icon({
-        iconUrl: "data/green_earthquake.png",
-        iconAnchor: [32, 64],
-        popupAnchor: [0, -80],
-        className: "icons",
-      });
-      var white_icon = L.icon({
-        iconUrl: "data/white_earthquake.png",
-        iconAnchor: [32, 64],
-        popupAnchor: [0, -80],
-        className: "icons",
-      });
-      var red_icon = L.icon({
-        iconUrl: "data/red_earthquake.png",
-        iconAnchor: [32, 64],
-        popupAnchor: [0, -80],
-        className: "icons",
-      });
-      var orange_icon = L.icon({
-        iconUrl: "data/orange_earthquake.png",
-        iconAnchor: [32, 64],
-        popupAnchor: [0, -80],
-        className: "icons",
-      });
-      if (mag >= 3 && mag < 5) {
-        var green_marker = L.marker([coor[1], coor[0]], {
-          icon: green_icon,
-        });
-
-        var pulsingIcon = L.icon.pulse({
-          iconSize: [20, 20],
-          fillColor: "green",
-          color: "green",
-        });
-        var green_circle_marker = L.marker([coor[1], coor[0]], {
-          icon: pulsingIcon,
-        });
-
-        layergroup_recenteq.addLayer(green_circle_marker);
-        layergroup_recenteq.addLayer(green_marker);
-
-        green_marker.bindPopup(popup_content);
-      } else if (mag > 2.5 && mag < 3) {
-        var white_marker = L.marker([coor[1], coor[0]], {
-          icon: white_icon,
-          stroke: true,
-
+        var latitude = coor[1];
+        var longitude = coor[0];
+        findCountry2(latitude, longitude);
+        var popup_content =
+          "<h3>Attributes</h3>" +
+          "<br><b>Place: </b>" +
+          country_names +
+          "<br><b>Magnitude: </b><span style='float: right;'>" +
+          mag +
+          "</span>" +
+          "<br><b>Date: </b><span style='float: right;'>" +
+          date +
+          "</span>" +
+          "<br><b>Time: </b><span style='float: right;'>" +
+          time +
+          "</span>";
+        //custumize markers
+        var green_icon = L.icon({
+          iconUrl: "data/green_earthquake.png",
+          iconAnchor: [32, 64],
+          popupAnchor: [0, -80],
           className: "icons",
         });
-        var pulsingIcon = L.icon.pulse({
-          iconSize: [20, 20],
-          fillColor: "white",
-          color: "white",
+        var white_icon = L.icon({
+          iconUrl: "data/white_earthquake.png",
+          iconAnchor: [32, 64],
+          popupAnchor: [0, -80],
+          className: "icons",
         });
-        var white_circle_marker = L.marker([coor[1], coor[0]], {
-          icon: pulsingIcon,
+        var red_icon = L.icon({
+          iconUrl: "data/red_earthquake.png",
+          iconAnchor: [32, 64],
+          popupAnchor: [0, -80],
+          className: "icons",
         });
+        var orange_icon = L.icon({
+          iconUrl: "data/orange_earthquake.png",
+          iconAnchor: [32, 64],
+          popupAnchor: [0, -80],
+          className: "icons",
+        });
+        if (mag >= 3 && mag < 5) {
+          var green_marker = L.marker([coor[1], coor[0]], {
+            icon: green_icon,
+          });
 
-        layergroup_recenteq.addLayer(white_circle_marker);
-        layergroup_recenteq.addLayer(white_marker);
+          var pulsingIcon = L.icon.pulse({
+            iconSize: [20, 20],
+            fillColor: "green",
+            color: "green",
+          });
+          var green_circle_marker = L.marker([coor[1], coor[0]], {
+            icon: pulsingIcon,
+          });
 
-        white_marker.bindPopup(popup_content);
-      } else if (mag > 5 && mag < 6) {
-        var pulsingIcon = L.icon.pulse({
-          iconSize: [20, 20],
-          fillColor: "orange",
-          color: "orange",
-        });
-        var orange_circle_marker = L.marker([coor[1], coor[0]], {
-          icon: pulsingIcon,
-        });
-        var orange_marker = L.marker([coor[1], coor[0]], {
-          icon: orange_icon,
+          layergroup_recenteq.addLayer(green_circle_marker);
+          layergroup_recenteq.addLayer(green_marker);
 
-          iconSize: [30, 30],
-        });
-        layergroup_recenteq.addLayer(orange_marker);
-        layergroup_recenteq.addLayer(orange_circle_marker);
-        orange_marker.bindPopup(popup_content);
-      } else if (mag >= 6) {
-        var red_marker = L.marker([coor[1], coor[0]], {
-          icon: red_icon,
+          green_marker.bindPopup(popup_content);
+        } else if (mag > 2.5 && mag < 3) {
+          var white_marker = L.marker([coor[1], coor[0]], {
+            icon: white_icon,
+            stroke: true,
 
-          iconSize: [30, 30],
-        });
-        var pulsingIcon = L.icon.pulse({
-          iconSize: [20, 20],
-          fillColor: "red",
-          color: "red",
-        });
-        var red_circle_marker = L.marker([coor[1], coor[0]], {
-          icon: pulsingIcon,
-        });
+            className: "icons",
+          });
+          var pulsingIcon = L.icon.pulse({
+            iconSize: [20, 20],
+            fillColor: "white",
+            color: "white",
+          });
+          var white_circle_marker = L.marker([coor[1], coor[0]], {
+            icon: pulsingIcon,
+          });
 
-        layergroup_recenteq.addLayer(red_circle_marker);
-        layergroup_recenteq.addLayer(red_marker);
+          layergroup_recenteq.addLayer(white_circle_marker);
+          layergroup_recenteq.addLayer(white_marker);
 
-        red_marker.bindPopup(popup_content);
-      }
+          white_marker.bindPopup(popup_content);
+        } else if (mag > 5 && mag < 6) {
+          var pulsingIcon = L.icon.pulse({
+            iconSize: [20, 20],
+            fillColor: "orange",
+            color: "orange",
+          });
+          var orange_circle_marker = L.marker([coor[1], coor[0]], {
+            icon: pulsingIcon,
+          });
+          var orange_marker = L.marker([coor[1], coor[0]], {
+            icon: orange_icon,
+
+            iconSize: [30, 30],
+          });
+          layergroup_recenteq.addLayer(orange_marker);
+          layergroup_recenteq.addLayer(orange_circle_marker);
+          orange_marker.bindPopup(popup_content);
+        } else if (mag >= 6) {
+          var red_marker = L.marker([coor[1], coor[0]], {
+            icon: red_icon,
+
+            iconSize: [30, 30],
+          });
+          var pulsingIcon = L.icon.pulse({
+            iconSize: [20, 20],
+            fillColor: "red",
+            color: "red",
+          });
+          var red_circle_marker = L.marker([coor[1], coor[0]], {
+            icon: pulsingIcon,
+          });
+
+          layergroup_recenteq.addLayer(red_circle_marker);
+          layergroup_recenteq.addLayer(red_marker);
+
+          red_marker.bindPopup(popup_content);
+        }
+
+        createTable(
+          recent_eq,
+          layergroup_recenteq,
+          place,
+          mag,
+          date_n_time,
+          latitude,
+          longitude
+        );
+      });
     });
+
+  var fault_lines;
+  fetch("data/fault_line.geojson")
+    .then((request) => {
+      return request.json();
+    })
+    .then((data) => {
+      fault_lines = L.geoJSON(data);
+    });
+  fault_input.addEventListener("change", () => {
+    if (fault_input.checked) {
+      console.log("fault lines checked");
+      fault_lines.addTo(map);
+    } else {
+      console.log("fault line didnt checked");
+      fault_lines.remove();
+    }
   });
-
-var fault_lines;
-fetch("data/fault_line.geojson")
-  .then((request) => {
-    return request.json();
-  })
-  .then((data) => {
-    fault_lines = L.geoJSON(data);
-
-    L.control
-      .layers(basemaps, {
-        "Significant Earth-Quakes": layerGroup,
-        "Recent Earth-Quakes": layergroup_recenteq,
-        "Fault Line": fault_lines,
-      })
-      .addTo(map);
-  });
-
+}
 var location_button = document.getElementById("location_button");
 location_button.addEventListener("click", () => {
   console.log("button clicked");
@@ -315,7 +332,7 @@ function locf(e) {
     iconAnchor: [32, 64],
     className: "icons",
   });
-  map.flyTo([e.latitude, e.longitude], 10);
+  map.flyTo([e.latitude, e.longitude], 5);
   const location_markers = L.marker([e.latitude, e.longitude], {
     icon: location_icon,
   }).addTo(map);
@@ -327,6 +344,8 @@ function locf(e) {
 //get country coordinates from api
 search_button.addEventListener("click", () => {
   console.log(search_input.value);
+  var search_text =
+    search_input.value[0].toUpperCase() + search_input.value.slice(1); //to capitalize the first letter of search input
   fetch("https://restcountries.com/v3.1/all")
     .then((response) => response.json())
     .then((items) => {
@@ -335,17 +354,82 @@ search_button.addEventListener("click", () => {
       items.forEach((data) => {
         var country = data.name.common;
 
-        if (search_input.value === country) {
+        if (search_text === country) {
           map.flyTo([data.latlng[0], data.latlng[1]], 7);
           countryFound = true;
         }
       });
 
       if (!countryFound) {
-        alert("There is no such Country: " + search_input.value);
+        alert("There is no such Country: " + search_text);
       }
-    })
-    .catch((error) => {
-      console.error("Error fetching countries:", error);
     });
 });
+
+//finds country from coordinates
+// function findCountry(lat, lng) {
+//   var api =
+//     "https://api.maptiler.com/geocoding/" +
+//     lng +
+//     "," +
+//     lat +
+//     ".json?key=KscIZaAYpw2DmDqX5O2V";
+//   fetch(api)
+//     .then((request) => {
+//       return request.json();
+//     })
+//     .then((data) => {
+//       var country_name = data.features[2].place_name_en;
+//       return country_name;
+//     });
+// }
+// const a = findCountry(12.798283238756156, 31.595015079102467);
+// console.log(a);
+let c_code = new Array();
+let country = new Array();
+async function findCountry2(lat, lng) {
+  var api =
+    "https://api.maptiler.com/geocoding/" +
+    lng +
+    "," +
+    lat +
+    ".json?key=KscIZaAYpw2DmDqX5O2V";
+
+  await fetch(api)
+    .then((request) => {
+      return request.json();
+    })
+    .then((data) => {
+      var country_code = data.features[0].properties.country_code;
+      console.log(country_code);
+      console.log(country[2][0].toLowerCase());
+      console.log(country.length);
+
+      for (var i = 0; i < country.length; i++)
+        if (country_code === country[i][0].toLowerCase()) {
+          console.log(country[i][1]);
+          country_names = country[i][1];
+        } else {
+          console.log("Unavailable Country input");
+        }
+      return country_names;
+    });
+}
+
+async function getCountryNames() {
+  fetch("https://restcountries.com/v3.1/all")
+    .then((response) => response.json())
+    .then((items) => {
+      items.forEach((data) => {
+        //console.log(data);
+        country.push([data.altSpellings[0], data.name.common]);
+
+        //c_code = c_code.toLowerCase();
+      });
+    });
+}
+getCountryNames();
+var lati = 16.30974901422499;
+let long = 32.83875469588597;
+recent_eq_function();
+findCountry2(lati, long);
