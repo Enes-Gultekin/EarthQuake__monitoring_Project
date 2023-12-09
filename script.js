@@ -9,8 +9,8 @@ const fault_input = document.getElementById("fault_input");
 let country_name = new Array();
 
 const map = L.map("map", {
-  maxZoom: 20,
-  minZoom: 3.2,
+  maxZoom: 17,
+  minZoom: 3,
   maxBounds: [
     [-90, -180], // Southwest coordinates
     [90, 180], // Northeast coordinates
@@ -30,11 +30,8 @@ var CartoDB_Positron = L.tileLayer(
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   }
-);
-var OSM = L.tileLayer(
-  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {}
 ).addTo(map);
+var OSM = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {});
 
 //limit the max boundaries of map
 var southWest = L.latLng(-90, -180),
@@ -86,7 +83,7 @@ function createTable(
   });
 }
 
-//fetch most deadliest earthquakes data from data-base(PostGre)
+//fetch most deadliest earthquakes data from database(PostGre)
 fetch("service.php")
   .then((request) => {
     return request.json();
@@ -104,7 +101,7 @@ fetch("service.php")
       var each_country = L.icon({
         iconUrl: "data/earthquake.png",
         iconSize: [40, 40],
-        iconAnchor: [20, 40],
+        iconAnchor: [20, 0],
         className: "icons",
       });
       const markers = L.marker(geometry, {
@@ -156,7 +153,7 @@ one_days_before.setDate(one_days_before.getDate() - 1);
 one_days_before = one_days_before.toISOString().split("T")[0];
 
 //fetch geojson from usgs
-const api_url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${one_days_before}&endtime=${current_time}`;
+const api_url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${one_days_before}&endtime=${current_time}&minmagnitude=2.5`;
 
 var layergroup_recent_earthquakes = L.layerGroup();
 let country_names;
@@ -389,3 +386,15 @@ const close_message = document.getElementById("close_message");
 close_message.addEventListener("click", () => {
   modal.remove();
 });
+
+var wmsLayer = L.tileLayer
+  .wms(
+    "http://neowms.sci.gsfc.nasa.gov/wms/wms?version=1.3.0&service=WMS&REQUEST=GetMap&LAYERS=MODAL2_D_CLD_CI&CRS=CRS:84&FORMAT=image/png&HEIGHT=1800&WIDTH=3600&TRANSPARENT=TRUE&BBOX=-180.0,-90.0,180.0,90.0&STYLES=rgb    ",
+    {
+      layers: "MODAL2_D_CLD_CI",
+      format: "image/png", // or other supported format
+      transparent: true,
+      attribution: "Harvard GeoData Service",
+    }
+  )
+  .addTo(map);
