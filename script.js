@@ -149,7 +149,7 @@ fetch("service.php")
 let current_time = new Date();
 current_time = current_time.toISOString().split("T")[0];
 let one_days_before = new Date();
-one_days_before.setDate(one_days_before.getDate() - 1);
+one_days_before.setDate(one_days_before.getDate());
 one_days_before = one_days_before.toISOString().split("T")[0];
 
 //fetch geojson from usgs
